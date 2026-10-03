@@ -1,0 +1,30 @@
+name: Deploy to DreamHost
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PAULBLOWER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "iad1-shared-e1-03.dreamhost.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKrB5WjhBz4x2RGQcjU/SORvLYnKcT2+7gjNoMIHt5wO" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: |
+          rsync -avz --no-perms --no-owner --no-group \
+            --exclude='.git' \
+            --exclude='.github' \
+            -e "ssh -p 22" \
+            ./ merciorcom@iad1-shared-e1-03.dreamhost.com:/home/merciorcom/paulblower.co.uk/
